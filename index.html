@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>語法挑戰：不但不...反而...</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+            background-color: #f0fdf4; /* Light green background */
+        }
+        .option-btn {
+            transition: all 0.2s;
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+    <!-- Google Fonts for better Chinese typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="flex items-center justify-center min-h-screen text-gray-800">
+
+    <div class="w-full max-w-2xl px-4">
+        <!-- Main Game Container -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
+            
+            <!-- Header -->
+            <div class="bg-teal-600 p-6 text-white text-center relative">
+                <h1 class="text-2xl font-bold tracking-wider">語法大挑戰</h1>
+                <p class="text-teal-100 text-sm mt-1">L1-L9 重點句型：不但不...反而... / 怎麼不...反而...</p>
+                <div id="score-board" class="absolute top-6 right-6 font-bold hidden">
+                    得分: <span id="score">0</span>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="p-6 md:p-8 min-h-[400px] flex flex-col justify-center" id="game-content">
+                <!-- Content will be injected here by JavaScript -->
+            </div>
+
+            <!-- Footer / Progress -->
+            <div class="bg-gray-50 p-4 text-center border-t border-gray-100">
+                <div id="progress-container" class="hidden w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                    <div id="progress-bar" class="bg-teal-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="progress-text" class="text-xs text-gray-500 hidden">第 1 / 10 題</p>
+                <p class="text-xs text-gray-400 mt-1">時代華語第三冊 L1-L9</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 題庫資料
+        // 注意：這裡的 options 順序會在遊戲開始時被隨機打亂
+        const questions = [
+            {
+                id: 1,
+                text: "他做錯了事，不但不道歉，反而______。",
+                options: [
+                    { text: "罵人", correct: true, rationale: "「反而」接預期相反的惡劣行為。做錯事該道歉，不道歉還罵人(L9)，行為更糟。" },
+                    { text: "送禮", correct: false, rationale: "送禮是補償行為，不是惡劣的相反行為。" },
+                    { text: "說明", correct: false, rationale: "說明是中性行為，這裡語氣需要強烈反差。" },
+                    { text: "後悔", correct: false, rationale: "後悔是內心感覺，不是外在行為。" }
+                ],
+                hint: "這個人做錯事態度很差，選一個負面的動詞。(參見L4道歉, L9罵)"
+            },
+            {
+                id: 2,
+                text: "颱風來了，雨不但沒停，反而______。",
+                options: [
+                    { text: "變大了", correct: true, rationale: "「雨沒停」的預期相反或加強狀態就是「雨變大」。" },
+                    { text: "變小了", correct: false, rationale: "變小是情況好轉，不適合用「反而」。" },
+                    { text: "出太陽", correct: false, rationale: "颱風天不會立刻出太陽。" },
+                    { text: "消失了", correct: false, rationale: "雨通常說「停」，不說「消失」。" }
+                ],
+                hint: "雨勢沒有減弱，反倒更強了。(參見L5颱風)"
+            },
+            {
+                id: 3,
+                text: "你這個月花太多錢了，怎麼不______，反而一直亂買東西？",
+                options: [
+                    { text: "節省", correct: true, rationale: "花錢太多應該「節省」(L3)，這是預期的正確行為。" },
+                    { text: "浪費", correct: false, rationale: "浪費與亂買東西意思相近，無對比。" },
+                    { text: "刷卡", correct: false, rationale: "刷卡不是解決花錢的方法。" },
+                    { text: "逛街", correct: false, rationale: "逛街通常會花錢。" }
+                ],
+                hint: "花費太高時，應該要做什麼動作來存錢？(參見L3生詞)"
+            },
+            {
+                id: 4,
+                text: "吃了那種藥以後，他的病不但沒好，反而更______了。",
+                options: [
+                    { text: "嚴重", correct: true, rationale: "病沒好的相反結果就是變「嚴重」(L5)。" },
+                    { text: "健康", correct: false, rationale: "健康與病沒好矛盾。" },
+                    { text: "舒服", correct: false, rationale: "病沒好不會覺得舒服。" },
+                    { text: "有效", correct: false, rationale: "有效表示藥有用，與句意相反。" }
+                ],
+                hint: "病況惡化了，形容情況很糟糕。(參見L5生詞)"
+            },
+            {
+                id: 5,
+                text: "這家店的服務員不但不客氣，反而對客人很______。",
+                options: [
+                    { text: "兇", correct: true, rationale: "不客氣的相反或更負面的態度是「兇」(L2)。" },
+                    { text: "好", correct: false, rationale: "好是正面態度。" },
+                    { text: "歡迎", correct: false, rationale: "歡迎是客氣的表現。" },
+                    { text: "滿意", correct: false, rationale: "滿意是形容客人的感受。" }
+                ],
+                hint: "形容態度很不好，會罵人或是臉色難看。(參見L2生詞)"
+            },
+            {
+                id: 6,
+                text: "請選出正確的句子：",
+                options: [
+                    { text: "他怎麼不解釋，反而生氣了？", correct: true, rationale: "語法正確：「怎麼不(預期行為)，反而(相反行為)？」" },
+                    { text: "他怎麼解釋不，反而生氣了？", correct: false, rationale: "否定詞「不」應在動詞前。" },
+                    { text: "他反而不解釋，怎麼生氣了？", correct: false, rationale: "「怎麼」是用來詢問原因，應引導第一分句。" },
+                    { text: "他解釋怎麼不，反而生氣了？", correct: false, rationale: "語序錯誤。" }
+                ],
+                hint: "注意「怎麼不...」的位置，應該放在第一個動作前面。"
+            },
+            {
+                id: 7,
+                text: "請選出正確的句子：",
+                options: [
+                    { text: "這裡的房價不但沒降低，反而提高了。", correct: true, rationale: "語法正確：不但沒(A)，反而(B)。" },
+                    { text: "這裡的房價沒降低不但，反而提高了。", correct: false, rationale: "「不但」位置錯誤。" },
+                    { text: "這裡的房價不但沒降低，反而提高不。", correct: false, rationale: "「反而」後接事實，不應否定結尾。" },
+                    { text: "這裡的房價反而沒降低，不但提高了。", correct: false, rationale: "關聯詞順序顛倒。" }
+                ],
+                hint: "這是「不但...反而...」的句型，注意詞語的順序。"
+            },
+            {
+                id: 8,
+                text: "請選出正確的句子：",
+                options: [
+                    { text: "這個麵包很新鮮，你怎麼不吃，反而扔了？", correct: true, rationale: "新鮮應該吃，卻扔了(L3)，符合邏輯。" },
+                    { text: "這個麵包很新鮮，你不但不吃，怎麼扔了？", correct: false, rationale: "混合句型，語氣不順。" },
+                    { text: "這個麵包很新鮮，你吃怎麼不，反而扔了？", correct: false, rationale: "語序錯誤。" },
+                    { text: "這個麵包很新鮮，你反而不吃，怎麼扔了？", correct: false, rationale: "邏輯順序錯誤。" }
+                ],
+                hint: "東西還好好的，為什麼丟掉呢？注意「扔」(L3)這個字。"
+            },
+            {
+                id: 9,
+                text: "他不但不承認錯誤，反而______。",
+                options: [
+                    { text: "說是我做的", correct: true, rationale: "不承認(L8)還推卸責任，符合「反而」加強語氣。" },
+                    { text: "向我道歉", correct: false, rationale: "道歉是承認後的行為。" },
+                    { text: "覺得很抱歉", correct: false, rationale: "正面態度，不符邏輯。" },
+                    { text: "馬上改進", correct: false, rationale: "改進是正面行為。" }
+                ],
+                hint: "他不覺得自己錯，甚至還覺得是別人的錯。(參見L8承認)"
+            },
+            {
+                id: 10,
+                text: "大家都去幫忙了，你怎麼不過去，反而______？",
+                options: [
+                    { text: "坐在這裡休息", correct: true, rationale: "大家忙，你休息，這是不合常理的相反行為。" },
+                    { text: "跑去幫忙", correct: false, rationale: "順接邏輯應這用「也」。" },
+                    { text: "跟大家一起做", correct: false, rationale: "順接邏輯。" },
+                    { text: "很認真", correct: false, rationale: "語意不通。" }
+                ],
+                hint: "別人都在工作，你卻在做什麼輕鬆的事？"
+            }
+        ];
+
+        // 遊戲狀態
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+
+        // DOM 元素
+        const gameContent = document.getElementById('game-content');
+        const scoreBoard = document.getElementById('score-board');
+        const scoreDisplay = document.getElementById('score');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        // 初始化遊戲畫面 (歡迎頁面)
+        function showWelcomeScreen() {
+            scoreBoard.classList.add('hidden');
+            progressContainer.classList.add('hidden');
+            progressText.classList.add('hidden');
+            
+            gameContent.innerHTML = `
+                <div class="text-center fade-in">
+                    <div class="mb-6 text-6xl">🎮</div>
+                    <h2 class="text-xl font-bold mb-4 text-gray-700">準備好接受挑戰了嗎？</h2>
+                    <p class="text-gray-500 mb-8">
+                        這裡有 10 道關於「不但不...反而...」的題目。<br>
+                        請選出最合適的答案！
+                    </p>
+                    <button onclick="startGame()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full text-lg shadow-md transform transition hover:scale-105">
+                        開始遊戲
+                    </button>
+                </div>
+            `;
+        }
+
+        // Fisher-Yates 洗牌演算法
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 開始遊戲
+        function startGame() {
+            // 在遊戲開始時，打亂所有題目的選項順序
+            questions.forEach(q => {
+                shuffleArray(q.options);
+            });
+
+            currentQuestionIndex = 0;
+            score = 0;
+            updateScore();
+            scoreBoard.classList.remove('hidden');
+            progressContainer.classList.remove('hidden');
+            progressText.classList.remove('hidden');
+            loadQuestion();
+        }
+
+        // 載入題目
+        function loadQuestion() {
+            isAnswered = false;
+            const question = questions[currentQuestionIndex];
+            
+            // 更新進度條
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+            progressText.innerText = `第 ${currentQuestionIndex + 1} / ${questions.length} 題`;
+
+            // 渲染題目卡片
+            gameContent.innerHTML = `
+                <div class="fade-in w-full">
+                    <div class="mb-6">
+                        <span class="inline-block bg-teal-100 text-teal-800 text-xs px-2 py-1 rounded-md mb-2 font-bold">Question ${currentQuestionIndex + 1}</span>
+                        <h3 class="text-xl md:text-2xl font-bold text-gray-800 leading-relaxed">${question.text}</h3>
+                    </div>
+
+                    <div class="space-y-3">
+                        ${question.options.map((option, index) => `
+                            <button onclick="checkAnswer(${index})" class="option-btn w-full text-left p-4 rounded-xl border-2 border-gray-200 hover:border-teal-400 hover:bg-teal-50 bg-white text-gray-700 font-medium text-lg focus:outline-none">
+                                ${["A", "B", "C", "D"][index]}. ${option.text}
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    <div class="mt-6 flex justify-between items-center">
+                        <button onclick="toggleHint()" class="text-sm text-yellow-600 hover:text-yellow-700 flex items-center font-bold">
+                            💡 <span id="hint-text">顯示提示</span>
+                        </button>
+                    </div>
+
+                    <div id="hint-box" class="hidden mt-3 p-3 bg-yellow-50 text-yellow-800 text-sm rounded-lg border border-yellow-200">
+                        提示：${question.hint}
+                    </div>
+
+                    <div id="feedback-area" class="hidden mt-6 p-4 rounded-xl border-l-4">
+                        <!-- Feedback content goes here -->
+                    </div>
+                </div>
+            `;
+        }
+
+        // 檢查答案
+        function checkAnswer(selectedIndex) {
+            if (isAnswered) return;
+            isAnswered = true;
+
+            const question = questions[currentQuestionIndex];
+            const selectedOption = question.options[selectedIndex];
+            const isCorrect = selectedOption.correct;
+            const feedbackArea = document.getElementById('feedback-area');
+            const buttons = document.querySelectorAll('.option-btn');
+
+            // 鎖定按鈕並顯示正確/錯誤樣式
+            buttons.forEach((btn, index) => {
+                btn.disabled = true;
+                btn.classList.remove('hover:border-teal-400', 'hover:bg-teal-50', 'hover:scale-105');
+                
+                if (question.options[index].correct) {
+                    // 正確答案總是顯示綠色
+                    btn.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                    btn.innerHTML += ' ✅';
+                } else if (index === selectedIndex && !isCorrect) {
+                    // 選錯的顯示紅色
+                    btn.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+                    btn.innerHTML += ' ❌';
+                } else {
+                    btn.classList.add('opacity-50');
+                }
+            });
+
+            // 更新分數
+            if (isCorrect) {
+                score += 10;
+                updateScore();
+                feedbackArea.className = "mt-6 p-4 rounded-xl border-l-4 bg-green-50 border-green-500 fade-in";
+                feedbackArea.innerHTML = `
+                    <h4 class="font-bold text-green-700 text-lg mb-1">答對了！🎉</h4>
+                    <p class="text-gray-700 mb-4">${selectedOption.rationale}</p>
+                    <button onclick="nextQuestion()" class="bg-teal-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-teal-700 transition">下一題 ➡️</button>
+                `;
+            } else {
+                feedbackArea.className = "mt-6 p-4 rounded-xl border-l-4 bg-red-50 border-red-500 fade-in";
+                feedbackArea.innerHTML = `
+                    <h4 class="font-bold text-red-700 text-lg mb-1">答錯了... 😅</h4>
+                    <p class="text-gray-700 mb-4">${selectedOption.rationale}</p>
+                    <button onclick="nextQuestion()" class="bg-teal-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-teal-700 transition">下一題 ➡️</button>
+                `;
+            }
+            
+            feedbackArea.classList.remove('hidden');
+        }
+
+        // 下一題或結束
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        // 顯示提示
+        function toggleHint() {
+            const hintBox = document.getElementById('hint-box');
+            const hintText = document.getElementById('hint-text');
+            if (hintBox.classList.contains('hidden')) {
+                hintBox.classList.remove('hidden');
+                hintText.innerText = "隱藏提示";
+            } else {
+                hintBox.classList.add('hidden');
+                hintText.innerText = "顯示提示";
+            }
+        }
+
+        // 更新分數顯示
+        function updateScore() {
+            scoreDisplay.innerText = score;
+        }
+
+        // 顯示最終結果
+        function showResults() {
+            scoreBoard.classList.add('hidden');
+            progressContainer.classList.add('hidden');
+            progressText.classList.add('hidden');
+
+            let message = "";
+            let emoji = "";
+            if (score === 100) {
+                message = "太厲害了！語法大師！";
+                emoji = "🏆";
+            } else if (score >= 80) {
+                message = "做得很好！繼續保持！";
+                emoji = "👏";
+            } else if (score >= 60) {
+                message = "通過了！再多練習一下會更好！";
+                emoji = "💪";
+            } else {
+                message = "沒關係，再練習一次吧！";
+                emoji = "📚";
+            }
+
+            gameContent.innerHTML = `
+                <div class="text-center fade-in">
+                    <div class="text-6xl mb-4">${emoji}</div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">測驗結束</h2>
+                    <p class="text-gray-500 mb-6">你的得分是</p>
+                    <div class="text-5xl font-bold text-teal-600 mb-6">${score} / 100</div>
+                    <p class="text-lg text-gray-700 font-medium mb-8">${message}</p>
+                    
+                    <button onclick="startGame()" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-8 rounded-full text-lg shadow-md transform transition hover:scale-105">
+                        再玩一次 🔄
+                    </button>
+                </div>
+            `;
+        }
+
+        // 初始化
+        showWelcomeScreen();
+
+    </script>
+</body>
+</html>
